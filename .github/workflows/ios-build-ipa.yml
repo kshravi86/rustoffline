@@ -157,7 +157,8 @@ jobs:
           set -euo pipefail
           TEAM=${IOS_TEAM_ID}
           BUNDLE=${BUNDLE_ID}
-          PROFILE=${PP_NAME:-$PP_UUID}
+          # Prefer UUID for robustness; fall back to profile name
+          PROFILE=${PP_UUID:-$PP_NAME}
           PLIST=$RUNNER_TEMP/profile.plist
           if [ ! -f "$PLIST" ]; then
             echo "::error title=Provisioning profile missing::Install provisioning profile before exporting."
@@ -185,9 +186,11 @@ jobs:
             if [ "$USER_METHOD" = "ad-hoc" ]; then USER_METHOD="release-testing"; fi
             METHOD="$USER_METHOD"
           fi
-          # Map deprecated value to the new one (Xcode 16+)
+          # Map deprecated values to the new ones (Xcode 16+)
           if [ "$METHOD" = "ad-hoc" ]; then METHOD="release-testing"; fi
+          if [ "$METHOD" = "app-store" ]; then METHOD="app-store-connect"; fi
           echo "Using export method: $METHOD (detected: $DETECTED_METHOD)"
+          echo "Using provisioning profile for $BUNDLE => $PROFILE"
           cat > ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -199,6 +202,8 @@ jobs:
             <string>${TEAM}</string>
             <key>signingStyle</key>
             <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
             <key>provisioningProfiles</key>
             <dict>
               <key>${BUNDLE}</key>
