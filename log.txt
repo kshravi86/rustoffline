@@ -1,0 +1,28 @@
+
+Command line invocation:
+    /Applications/Xcode_26.0.1.app/Contents/Developer/usr/bin/xcodebuild -list -project RustOffline.xcodeproj
+Information about project "RustOffline":
+    Targets:
+        RustOffline
+    Build Configurations:
+        Debug
+        Release
+    If no build configuration is specified and -scheme is not passed then "Release" is used.
+    Schemes:
+        RustOffline
+Command line invocation:
+    /Applications/Xcode_26.0.1.app/Contents/Developer/usr/bin/xcodebuild archive -project RustOffline.xcodeproj -scheme RustOffline -configuration Release -destination generic/platform=iOS -archivePath /Users/runner/work/_temp/App.xcarchive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=*** "CODE_SIGN_IDENTITY=Apple Distribution" "PROVISIONING_PROFILE_SPECIFIER=rust offline"
+Build settings from command line:
+    CODE_SIGN_IDENTITY = Apple Distribution
+    CODE_SIGN_STYLE = Manual
+    DEVELOPMENT_TEAM = ***
+    PROVISIONING_PROFILE_SPECIFIER = rust offline
+2025-10-28 05:51:35.234 xcodebuild[1497:8406] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2025-10-28 05:51:35.243 xcodebuild[1497:8406] Writing error result bundle to /var/folders/xc/cl1fyykn2pj4ryhdw6r1mqtc0000gn/T/ResultBundle_2025-28-10_05-51-0035.xcresult
+xcodebuild: error: Unable to find a destination matching the provided destination specifier:
+		{ generic:1, platform:iOS }
+	Available destinations for the "RustOffline" scheme:
+		{ platform:macOS, arch:arm64, id:19b547c81b851a4d2798829972853b4c0bce4b03, name:My Mac }
+		{ platform:macOS, arch:x86_64, id:19b547c81b851a4d2798829972853b4c0bce4b03, name:My Mac }
+		{ platform:macOS, name:Any Mac }
+Error: Process completed with exit code 70.
