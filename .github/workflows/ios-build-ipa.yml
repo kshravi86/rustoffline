@@ -156,9 +156,17 @@ jobs:
         run: |
           set -euo pipefail
           TEAM=${IOS_TEAM_ID}
-          BUNDLE=${BUNDLE_ID}
-          # Prefer UUID for robustness; fall back to profile name
-          PROFILE=${PP_UUID:-$PP_NAME}
+          # Prefer bundle id from the archived app itself to guarantee key match
+          APP_PATH=$(echo "$RUNNER_TEMP/App.xcarchive/Products/Applications"/*.app | head -n 1)
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error title=Archive missing app::Could not find .app in the archive."
+            exit 1
+          fi
+          ARCHIVE_INFO_PLIST="$APP_PATH/Info.plist"
+          ARCHIVE_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$ARCHIVE_INFO_PLIST")
+          BUNDLE=${ARCHIVE_BUNDLE_ID}
+          # Use provisioning profile NAME for ExportOptions (Apple expects name here)
+          PROFILE=${PP_NAME}
           PLIST=$RUNNER_TEMP/profile.plist
           if [ ! -f "$PLIST" ]; then
             echo "::error title=Provisioning profile missing::Install provisioning profile before exporting."
@@ -190,7 +198,7 @@ jobs:
           if [ "$METHOD" = "ad-hoc" ]; then METHOD="release-testing"; fi
           if [ "$METHOD" = "app-store" ]; then METHOD="app-store-connect"; fi
           echo "Using export method: $METHOD (detected: $DETECTED_METHOD)"
-          echo "Using provisioning profile for $BUNDLE => $PROFILE"
+          echo "Using provisioning profile for $BUNDLE => $PROFILE (name)"
           cat > ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -218,6 +226,7 @@ jobs:
           </dict>
           </plist>
           EOF
+          echo "ExportOptions.plist written with bundle ${BUNDLE} and profile name ${PROFILE}"
 
       - name: Show ExportOptions for debugging
         run: |
