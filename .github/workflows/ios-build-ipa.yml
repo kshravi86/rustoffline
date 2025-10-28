@@ -99,15 +99,19 @@ jobs:
       - name: Detect bundle identifier
         run: |
           set -euo pipefail
-          BUNDLE_ID=$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -showBuildSettings \
-            | awk '/PRODUCT_BUNDLE_IDENTIFIER/ {print $3; exit}')
-          if [ -z "$BUNDLE_ID" ] || [ "$BUNDLE_ID" = "NO" ]; then
+          # Try to read from build settings first
+          BUNDLE_ID=$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
+            | awk '/PRODUCT_BUNDLE_IDENTIFIER/ {print $3; exit}' || true)
+          # Fallback: read from Info.plist (root CFBundleIdentifier), then legacy path used by some templates
+          if [ -z "${BUNDLE_ID:-}" ] || [ "$BUNDLE_ID" = "NO" ]; then
             for INFO_PLIST_PATH in "RustOffline/Info.plist" "Info.plist"; do
-              if [ -z "$BUNDLE_ID" ] || [ "$BUNDLE_ID" = "NO" ]; then
-                if [ -f "$INFO_PLIST_PATH" ]; then
+              if [ -f "$INFO_PLIST_PATH" ]; then
+                BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST_PATH" 2>/dev/null || true)
+                if [ -z "${BUNDLE_ID:-}" ]; then
                   BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleIdentifier' "$INFO_PLIST_PATH" 2>/dev/null || true)
                 fi
               fi
+              if [ -n "${BUNDLE_ID:-}" ]; then break; fi
             done
           fi
           if [ -z "$BUNDLE_ID" ]; then
