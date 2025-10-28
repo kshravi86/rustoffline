@@ -97,6 +97,7 @@ jobs:
           xcodebuild -resolvePackageDependencies -project "$PROJECT" -scheme "$SCHEME" -clonedSourcePackagesDirPath "$RUNNER_TEMP/SPM"
 
       - name: Archive (Release)
+        shell: bash
         run: |
           set -o pipefail
           PROFILE_SPECIFIER=${PP_NAME:-$PP_UUID}
@@ -112,7 +113,7 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_SPECIFIER" \
             2>&1 | tee $GITHUB_WORKSPACE/xcodebuild.log
-          EXIT=${{PIPESTATUS[0]}}
+          EXIT=${PIPESTATUS[0]}
           echo '---- Grep errors from xcodebuild.log ----'
           grep -n -E -i 'error:|note:' $GITHUB_WORKSPACE/xcodebuild.log | tail -n 400 || true
           echo '---- Tail of full xcodebuild.log ----'
