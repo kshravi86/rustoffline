@@ -48,6 +48,15 @@ jobs:
         run: xcodebuild -version
 
 
+      - name: Sanity-check certificate secret
+        if: env.P12_BASE64 != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf "%s" "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          # Validate PKCS#12 structure and password correctness
+          openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -info -noout -passin pass:"$P12_PASSWORD"
+
       - name: Import signing certificate
         if: env.P12_BASE64 != ''
         uses: apple-actions/import-codesign-certs@v2
