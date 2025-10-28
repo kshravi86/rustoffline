@@ -53,9 +53,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf "%s" "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          echo "Length of P12_BASE64 (chars): ${#P12_BASE64}"
+          # Detect common mistake: PEM text instead of PKCS#12
+          if echo "$P12_BASE64" | grep -q "BEGIN CERTIFICATE"; then
+            echo "::error title=Wrong file type::Secret resembles a PEM .cer/.pem, not a .p12 including private key."
+            exit 1
+          fi
+          # Robust Base64 decode: try GNU, BSD flags, and ignore-garbage
+          out="$RUNNER_TEMP/cert.p12"
+          decode_ok=false
+          if echo "$P12_BASE64" | base64 --decode > "$out" 2>/dev/null; then decode_ok=true; fi
+          if [ "$decode_ok" = false ] && echo "$P12_BASE64" | base64 -d > "$out" 2>/dev/null; then decode_ok=true; fi
+          if [ "$decode_ok" = false ] && echo "$P12_BASE64" | base64 -D -i > "$out" 2>/dev/null; then decode_ok=true; fi
+          if [ "$decode_ok" = false ]; then
+            echo "::error title=Base64 decode failed::P12_BASE64 could not be decoded. Ensure it is single-line Base64."
+            exit 1
+          fi
+          echo "Decoded cert size (bytes): $(wc -c < "$out")"
           # Validate PKCS#12 structure and password correctness
-          openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -info -noout -passin pass:"$P12_PASSWORD"
+          openssl pkcs12 -in "$out" -info -noout -passin pass:"$P12_PASSWORD"
 
       - name: Import signing certificate
         if: env.P12_BASE64 != ''
